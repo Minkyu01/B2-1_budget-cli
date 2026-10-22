@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>가계부 흐름 탐색기</title>
+  <meta name="description" content="B2-1 파일 기반 가계부 콘솔 프로그램의 명령 · 저장 · 제너레이터 · 데코레이터 흐름을 단계별로 재생하는 평가용 화면">
+  <!-- 제목 글꼴(Jua)은 인터넷이 될 때만 받는다. 없으면 시스템 글꼴로 보인다 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <!-- 모듈이 아닌 일반 스크립트: file:// 로 더블클릭해 열어도 동작한다 -->
+  <script src="lines.js" defer></script>
+  <script src="engine.js" defer></script>
+  <script src="custom.js" defer></script>
+  <script src="scenes.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#stage">본문으로 건너뛰기</a>
+  <div class="app" id="app">
+    <nav class="nav" id="nav" aria-label="장면 목록">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <strong>B2-1 가계부</strong>
+          <span>흐름 탐색기 · 유민규</span>
+        </div>
+      </div>
+      <div class="nav-list" id="nav-list"></div>
+      <div class="legend" aria-label="그림 속 색 = 계층">
+        <span class="own-C">CLI</span>
+        <span class="own-S">서비스</span>
+        <span class="own-R">저장소</span>
+        <span class="own-M">모델</span>
+        <span class="own-T">공통 도구</span>
+        <span class="own-user">사용자</span>
+        <span class="own-file">파일</span>
+      </div>
+    </nav>
+
+    <main class="main" id="main">
+      <header class="topbar">
+        <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="장면 목록 열기" aria-expanded="false">☰</button>
+        <div class="heading">
+          <span class="eyebrow" id="scene-group"></span>
+          <h1 id="scene-title">가계부 흐름 탐색기</h1>
+          <p id="scene-sub"></p>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" id="theme-btn" type="button" aria-label="밝게·어둡게 바꾸기" title="밝게·어둡게 (T)">◐</button>
+          <button class="icon-btn" id="present-btn" type="button" aria-label="발표 모드" title="발표 모드 (P)" aria-pressed="false">▣</button>
+          <button class="icon-btn" id="full-btn" type="button" aria-label="전체 화면" title="전체 화면 (F)">⛶</button>
+          <button class="icon-btn" id="help-btn" type="button" aria-label="단축키 보기" title="단축키 (?)">?</button>
+        </div>
+      </header>
+      <div class="scenarios" id="scenarios" role="tablist" aria-label="시나리오"></div>
+      <section class="stage" id="stage" tabindex="-1" aria-live="off"></section>
+      <footer class="controls" id="controls">
+        <div class="ctrl-group">
+          <button class="icon-btn" id="first-btn" type="button" aria-label="처음으로" title="처음으로 (Home)">⏮</button>
+          <button class="icon-btn" id="prev-btn" type="button" aria-label="이전 단계" title="이전 단계 (←)">◀</button>
+          <button class="btn play" id="play-btn" type="button" title="재생·멈춤 (Space)"><span aria-hidden="true">▶</span> 재생</button>
+          <button class="icon-btn" id="next-btn" type="button" aria-label="다음 단계" title="다음 단계 (→)">▶</button>
+        </div>
+        <div class="progress" id="progress" aria-label="단계"></div>
+        <span class="step-count" id="step-count" aria-live="polite"></span>
+        <label class="speed">속도
+          <select id="speed">
+            <option value="0.6">느리게</option>
+            <option value="1" selected>보통</option>
+            <option value="1.7">빠르게</option>
+          </select>
+        </label>
+      </footer>
+    </main>
+
+    <aside class="talk" id="talk" aria-label="설명">
+      <div class="talk-card">
+        <div class="mascot" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <circle cx="24" cy="25" r="17" fill="#FFCF3D" stroke="#1E2240" stroke-width="2.5"/>
+            <circle cx="24" cy="25" r="12.8" fill="none" stroke="#D99A00" stroke-width="1.4" stroke-dasharray="2.2 2.4"/>
+            <text x="24" y="18.6" font-size="7.5" font-weight="900" text-anchor="middle" fill="#B07A00" font-family="system-ui, sans-serif">₩</text>
+            <circle class="eye" cx="19" cy="23.5" r="2" fill="#1E2240"/>
+            <circle class="eye" cx="29" cy="23.5" r="2" fill="#1E2240"/>
+            <path d="M19.5 29c2.5 2.4 6.5 2.4 9 0" fill="none" stroke="#1E2240" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="14.3" cy="28.2" r="2" fill="#FF9EB5" opacity=".75"/>
+            <circle cx="33.7" cy="28.2" r="2" fill="#FF9EB5" opacity=".75"/>
+            <path d="M38 8l1.2 2.6L42 11.8l-2.8 1.2L38 15.6l-1.2-2.6L34 11.8l2.8-1.2z" fill="#FFCF3D" stroke="#1E2240" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="bubble" id="bubble" aria-live="polite">
+          <span class="bubble-tag" id="say-tag">말할 것</span>
+          <p id="say"></p>
+        </div>
+      </div>
+      <section class="talk-sec" id="code-sec">
+        <h2>코드 <small id="code-hint">누르면 VS Code 에서 열려요</small></h2>
+        <ul class="code-list" id="code-list"></ul>
+      </section>
+      <section class="talk-sec" id="demo-sec">
+        <h2>시연</h2>
+        <p id="demo"></p>
+      </section>
+      <details class="talk-sec points" id="points-sec" open>
+        <summary>이 장면에서 꼭 말할 것</summary>
+        <ul id="points"></ul>
+      </details>
+    </aside>
+  </div>
+
+  <div class="help" id="help" hidden>
+    <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <h2 id="help-title">단축키</h2>
+      <dl>
+        <dt>→ / ←</dt><dd>다음 · 이전 단계</dd>
+        <dt>Space</dt><dd>재생 · 멈춤</dd>
+        <dt>Home</dt><dd>처음 단계로</dd>
+        <dt>] / [</dt><dd>다음 · 이전 장면</dd>
+        <dt>1 ~ 9</dt><dd>시나리오 고르기</dd>
+        <dt>P</dt><dd>발표 모드 (목록 숨김, 글자 크게)</dd>
+        <dt>F</dt><dd>전체 화면</dd>
+        <dt>T</dt><dd>밝게 · 어둡게</dd>
+        <dt>?</dt><dd>이 도움말</dd>
+      </dl>
+      <button class="btn" id="help-close" type="button">닫기</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
