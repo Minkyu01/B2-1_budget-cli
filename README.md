@@ -583,6 +583,12 @@ python -m unittest tests.test_storage.SafeWriteTests -v     # 클래스 하나�
 
 평가 때 띄워 놓고 설명할 흐름 그림을 더했다 (2026-10-18). 글 버전은 [docs/workflows.md](docs/workflows.md), 단계별로 재생하는 화면은 [docs/flow-explorer/](docs/flow-explorer/README.md) 이다. B7-1 의 흐름 탐색기와 같은 틀이고, 그림 속 색은 계층(CLI · 서비스 · 저장소 · 모델 · 공통 도구)이다. 화면 출력은 실제로 실행해 나온 것이고, 만들면서 정한 것은 탐색기 README 의 '결정 기록'에 있다. 프로그램 코드는 바꾸지 않았다.
 
+## 저장소
+
+- GitHub: https://github.com/Minkyu01/B2-1_budget-cli (공개, 2026-10-22). 커밋 이메일은 GitHub noreply 주소다.
+- 공개 저장소에 올리지 않는 것 (`.gitignore`): 과제 원문 `project.md`, 실행하면 생기는 `data/`, 서버 IP · 계정이 든 `docs/flow-explorer/tools/deploy.sh` 와 `docs/flow-explorer/DEPLOY.local.md`, 이 맥의 절대 경로가 든 `docs/archify/checks/`. 이 파일들은 이 맥에만 있다.
+- `docs/flow-explorer/lines.js` 에는 이 맥의 프로젝트 폴더 경로가 들어 있다. 흐름 탐색기의 코드 칩이 VS Code 로 그 줄을 열 때 쓴다(비밀 정보는 아님).
+
 ## 문서
 
 - [docs/requirements-traceability.md](docs/requirements-traceability.md) — 명세 조항 → 구현 위치 → 확인 방법
