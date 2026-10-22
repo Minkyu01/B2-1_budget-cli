@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B2-1 가계부 구조 그림</title>
+  <meta name="description" content="archify 그림 하나를 위쪽 이동 막대(전체 그림 · 이전 · 다음 · 상황 버튼)와 함께 보여 주는 틀">
+  <!--
+    archify 가 만든 그림 HTML 은 손대지 않는다 (checks/ 의 검사 기록이 그 파일의 해시를 갖고 있다).
+    대신 이 틀이 위쪽에 이동 막대를 두고 아래 iframe 에 그림을 연다.
+    상황 버튼은 archify 의 경로 탐색 주소(그림.html#route=시작~끝)로 그 길만 켜서 연다.
+    주소: view.html#update-workflow  ·  view.html#update-workflow/missing
+  -->
+  <style>
+    :root {
+      --bg: #f6f7fb; --surface: #ffffff; --surface-2: #f8f9fd; --line: #e1e4f0; --text: #1e2240; --muted: #5a6086;
+      --accent: #4f46e5; --accent-soft: #e3e6ff; --on-accent: #ffffff;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1020; --surface: #171b33; --surface-2: #1d2240; --line: #2b3056; --text: #eceeff; --muted: #aeb3d8; --accent: #8e8bff; --accent-soft: #24285a; --on-accent: #12142e; color-scheme: dark; }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; background: var(--bg); color: var(--text); font: 14px/1.4 "Pretendard Variable", "Apple SD Gothic Neo", system-ui, sans-serif; word-break: keep-all; }
+    header { flex: none; background: var(--surface); border-bottom: 1px solid var(--line); }
+    .bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; min-height: 52px; }
+    .bar a, .bar button { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); text-decoration: none; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .bar a:hover, .bar button:hover:not([disabled]) { border-color: var(--accent); }
+    .bar .home { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .bar button[disabled] { opacity: .4; cursor: default; }
+    .title { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 6px; }
+    .title b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .title small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+
+    /* 상황 줄 */
+    .scenes { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; }
+    .scenes .label { flex: none; font-size: 12px; font-weight: 800; color: var(--muted); }
+    .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
+    .chip { flex: none; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .chip:hover { border-color: var(--accent); }
+    .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .chip kbd { font: 10px ui-monospace, monospace; opacity: .65; }
+    .hint { display: flex; align-items: center; gap: 10px; padding: 0 16px 10px; min-height: 0; }
+    .hint[hidden] { display: none; }
+    .hint p { flex: 1; min-width: 0; margin: 0; font-size: 13px; color: var(--muted); }
+    .hint p b { color: var(--text); }
+    .explorer { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .explorer:hover { background: var(--accent-soft); }
+
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
+    @media (max-width: 640px) {
+      .bar { flex-wrap: wrap; }
+      .title { order: 5; flex-basis: 100%; padding: 2px 0 0; }
+      .label-long { display: none; }
+      .scenes .label { display: none; }
+      .hint { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="bar" aria-label="그림 이동">
+      <a class="home" href="index.html" title="그림 목록으로">← <span>전체 그림</span></a>
+      <button type="button" id="prev" title="이전 그림 ([)">‹ <span class="label-long">이전</span></button>
+      <button type="button" id="next" title="다음 그림 (])"><span class="label-long">다음</span> ›</button>
+      <div class="title"><b id="name"></b><small id="desc"></small></div>
+      <span class="count" id="count"></span>
+      <a id="raw" href="#" target="_blank" rel="noopener" title="그림만 새 창으로 (전체 화면 · 내보내기)">새 창으로 ↗</a>
+    </nav>
+    <div class="scenes">
+      <span class="label">상황</span>
+      <div class="chips" id="chips" role="group" aria-label="상황 고르기"></div>
+    </div>
+    <div class="hint" id="hint" hidden>
+      <p id="hint-text"></p>
+      <a class="explorer" id="explorer" href="#" target="_blank" rel="noopener" title="흐름 탐색기에서 이 상황을 한 단계씩 (말할 문장 · 터미널 출력)">단계별로 보기 — 흐름 탐색기 ↗</a>
+    </div>
+  </header>
+  <iframe id="frame" title="그림" allow="fullscreen; clipboard-write"></iframe>
+  <script>
+    (function () {
+      "use strict";
+      // index.html 과 같은 순서. 상황 = archify 경로 탐색의 시작~끝 (그림의 화살표를 따라 이어진 길) + 흐름 탐색기 장면
+      var EXPLORER = "../flow-explorer/index.html#";
+      var DIAGRAMS = [
+        { id: "architecture", name: "계층 구조", desc: "architecture · 2-1 모듈 책임", scenes: [
+          { id: "list", label: "list 한 번", route: "term~jsonl", explorer: "scene=arch&s=list", hint: "<b>터미널 → main → cmd_* → 서비스 → 저장소 → JSONL</b>. 명령 하나가 네 계층을 위에서 아래로만 지나요." },
+          { id: "add", label: "add 검증", route: "term~models", explorer: "scene=add&s=ok", hint: "<b>cmd_* → models.py</b>. 대화형 입력은 CLI 가 모델의 parse_* 로 바로 검증해요 (틀리면 다시 묻기)." },
+          { id: "csv", label: "CSV 가져오기", route: "term~csv", explorer: "scene=importcsv&s=sample", hint: "<b>… → 저장소 → CSV 파일</b>. CSV 읽기 · 쓰기도 저장소 계층(storage.py)만 해요." },
+          { id: "log", label: "실행 기록", route: "tools~applog", explorer: "scene=decorators&s=ok", hint: "<b>공통 도구 → app.log</b>. 데코레이터가 시작 · 성공 · 실행 시간을 파일에만 남겨요." }
+        ] },
+        { id: "classes", name: "서비스는 저장소를 받는다", desc: "class · 2-2 클래스 경계", scenes: [
+          { id: "add", label: "거래 추가 — 카테고리 확인", route: "tx_service~cat_repo", explorer: "scene=ledger&s=add", hint: "<b>TransactionService → CategoryRepository</b>. 카테고리 서비스를 부르지 않고 저장소를 읽기만 해요." },
+          { id: "remove", label: "카테고리 삭제 — 쓰는 거래 세기", route: "cat_service~tx_repo", explorer: "scene=category&s=rm-used", hint: "<b>CategoryService → TransactionRepository</b>. 거래를 끝까지 읽어 세고, 하나라도 있으면 삭제를 막아요." },
+          { id: "summary", label: "월별 요약", route: "budget_service~tx_repo", explorer: "scene=summary&s=under", hint: "<b>BudgetService → TransactionRepository</b>. 요약은 거래 파일을 한 번 훑어 합계만 남겨요." },
+          { id: "budget", label: "예산 저장", route: "ledger~budget_repo", explorer: "scene=summary&s=set", hint: "<b>Ledger → BudgetService → BudgetRepository</b>. Ledger 가 조립한 연결을 따라 upsert 로 저장해요." }
+        ] },
+        { id: "repositories", name: "저장소 하나를 넷이 상속", desc: "class · 2-2 · 3-3 Generic[T]", scenes: [
+          { id: "model", label: "한 줄 → Transaction", route: "tx_repo~transaction", explorer: "scene=validate&s=file", hint: "<b>TransactionRepository → Transaction</b>. 파일에서 읽을 때도 __post_init__ 검증을 거쳐요." },
+          { id: "base", label: "읽기 · 쓰기는 부모에", route: "tx_repo~base_repo", explorer: "scene=stream&s=list", hint: "<b>TransactionRepository → JsonlRepository[T]</b>. stream · append · _rewrite 는 부모 하나에만 있어요." },
+          { id: "rule", label: "반복 규칙 (보너스)", route: "rule_repo~rule", explorer: "scene=recurring&s=first", hint: "<b>RecurringRepository → RecurringRule</b>. 보너스 저장소도 model · key_field 만 정해요." }
+        ] },
+        { id: "list-sequence", name: "list --limit 3 호출 순서", desc: "sequence · 3-1 제너레이터 · 3-2 데코레이터", scenes: [
+          { id: "down", label: "파일까지 내려가기", route: "term~jsonl", explorer: "scene=listsearch&s=list", hint: "<b>터미널 → main → cmd_list → list_recent → stream() → 파일</b>. 제너레이터가 한 줄씩만 읽어요." },
+          { id: "up", label: "결과가 돌아오기", route: "stream~term", explorer: "scene=stream&s=list", hint: "<b>stream() → list_recent → cmd_list → 터미널</b>. heapq 가 최신 3건만 들고 올라와요." },
+          { id: "log", label: "실행 기록", route: "term~applog", explorer: "scene=decorators&s=ok", hint: "<b>… → cmd_list → app.log</b>. @log_command 가 시작 · 성공을 기록해요 (화면에는 안 나옴)." }
+        ] },
+        { id: "update-workflow", name: "update 와 원자적 교체", desc: "workflow · 2-3 안전한 수정 · 삭제", scenes: [
+          { id: "ok", label: "성공", route: "cmd~done", explorer: "scene=update&s=ok", hint: "<b>update → get → 새 Transaction → tmp → fsync → os.replace</b>. 검증을 다 통과한 뒤에만 파일을 바꿔요." },
+          { id: "missing", label: "없는 id", route: "cmd~not_found", explorer: "scene=update&s=missing", hint: "<b>update → get → NotFoundError</b>. 파일을 건드리기 전에 끝나요. 종료 코드 1." },
+          { id: "same", label: "바뀐 것 없음", route: "cmd~invalid", explorer: "scene=update&s=same", hint: "<b>… → 새 Transaction → ValidationError</b>. 새 값이 옛 값과 같거나 등록 안 된 카테고리면 쓰지 않아요." },
+          { id: "fail", label: "쓰다가 실패", route: "cmd~write_fail", explorer: "scene=atomic&s=mid", hint: "<b>… → tmp 에 쓰기 → 실패</b>. finally 가 tmp 만 지우고 원본은 바이트 단위로 그대로예요." }
+        ] },
+        { id: "import-dataflow", name: "import 두 단계", desc: "dataflow · 4-3 깨진 행 · 4-1 JSONL/CSV", scenes: [
+          { id: "save", label: "저장까지", route: "csv~jsonl", explorer: "scene=importcsv&s=sample&i=9", hint: "<b>CSV → 읽기 → 검증 → valid → transactions.jsonl</b>. 끝까지 검증한 뒤 append 한 번으로 저장해요." },
+          { id: "skip", label: "건너뛴 행 보고", route: "csv~report", explorer: "scene=importcsv&s=sample&i=7", hint: "<b>… → skipped → [완료] 화면</b>. 틀린 행은 건너뛰고 몇 번째 줄이 왜 틀렸는지 알려 줘요." },
+          { id: "fail", label: "읽기 실패", route: "csv~fail", explorer: "scene=importcsv&s=encoding", hint: "<b>CSV → 읽기 → AppError</b>. UTF-8 아님 · 헤더 누락이면 한 건도 저장하지 않아요." },
+          { id: "cats", label: "카테고리 확인", route: "cats~valid", explorer: "scene=importcsv&s=sample&i=8", hint: "<b>categories.jsonl → 검증 → valid</b>. 등록 목록은 처음에 한 번만 읽어 행마다 비교해요." }
+        ] }
+      ];
+      var $ = function (id) { return document.getElementById(id); };
+      var shown = "";
+      var dIndex = 0;
+
+      function parse() {
+        var raw = decodeURIComponent(location.hash.slice(1)).split("/");
+        var k = DIAGRAMS.findIndex(function (d) { return d.id === raw[0]; });
+        if (k < 0) k = 0;
+        var scene = DIAGRAMS[k].scenes.find(function (s) { return s.id === raw[1]; }) || null;
+        return { k: k, scene: scene };
+      }
+      function render() {
+        var st = parse();
+        var d = DIAGRAMS[st.k];
+        var sc = st.scene;
+        dIndex = st.k;
+        // 같은 그림이라도 상황이 바뀌면 다시 연다 (query 를 바꿔야 그림이 새로 읽혀 경로가 켜진다)
+        var src = sc ? d.id + ".html?route=" + sc.id + "#route=" + sc.route : d.id + ".html";
+        if (src !== shown) {
+          shown = src;
+          $("frame").src = src;
+        }
+        $("frame").title = d.name + " 그림" + (sc ? " — " + sc.label : "");
+        $("raw").href = src;
+        $("name").textContent = d.name;
+        $("desc").textContent = d.desc + (sc ? " · 상황: " + sc.label : "");
+        $("count").textContent = (st.k + 1) + " / " + DIAGRAMS.length;
+        $("prev").disabled = st.k === 0;
+        $("next").disabled = st.k === DIAGRAMS.length - 1;
+        document.title = (sc ? sc.label + " · " : "") + d.name + " · B2-1 가계부 구조 그림";
+
+        var chips = [{ id: "", label: "전체" }].concat(d.scenes);
+        $("chips").replaceChildren.apply($("chips"), chips.map(function (s, j) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.setAttribute("aria-pressed", String((sc ? sc.id : "") === s.id));
+          b.textContent = s.label;
+          var kbd = document.createElement("kbd");
+          kbd.textContent = String(j);
+          b.append(kbd);
+          b.addEventListener("click", function () { pick(s.id); });
+          return b;
+        }));
+        $("hint").hidden = !sc;
+        if (sc) {
+          $("hint-text").innerHTML = sc.hint;
+          $("explorer").href = EXPLORER + sc.explorer;
+        }
+      }
+      function pick(sid) {
+        var d = DIAGRAMS[dIndex];
+        location.hash = sid ? d.id + "/" + sid : d.id;
+      }
+      function go(k) {
+        if (k < 0 || k >= DIAGRAMS.length) return;
+        location.hash = DIAGRAMS[k].id;
+      }
+      window.addEventListener("hashchange", render);
+      $("prev").addEventListener("click", function () { go(dIndex - 1); });
+      $("next").addEventListener("click", function () { go(dIndex + 1); });
+      // [ · ] 이전 · 다음 그림, 0 ~ 9 상황 (흐름 탐색기와 같은 키). 그림 안을 누른 뒤에는 그림이 키를 받는다
+      document.addEventListener("keydown", function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === "[") go(dIndex - 1);
+        else if (e.key === "]") go(dIndex + 1);
+        else if (/^[0-9]$/.test(e.key)) {
+          var n = Number(e.key);
+          var list = DIAGRAMS[dIndex].scenes;
+          if (n === 0) pick("");
+          else if (list[n - 1]) pick(list[n - 1].id);
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

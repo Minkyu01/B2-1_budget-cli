@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "B2-1 가계부 — list --limit 3 한 번의 호출 순서",
+    "locale": "ko",
+    "output": "docs/archify/list-sequence.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "명령 · 호출"
+        },
+        "return": {
+          "label": "돌려줌"
+        },
+        "dashed": {
+          "label": "app.log 기록 (화면에는 안 나옴)"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "term",
+      "type": "external",
+      "label": "터미널",
+      "sublabel": "사용자"
+    },
+    {
+      "id": "main",
+      "type": "frontend",
+      "label": "main()",
+      "sublabel": "@handle_errors"
+    },
+    {
+      "id": "cmd",
+      "type": "frontend",
+      "label": "cmd_list",
+      "sublabel": "@log_command"
+    },
+    {
+      "id": "svc",
+      "type": "backend",
+      "label": "list_recent",
+      "sublabel": "@measure_time · 서비스"
+    },
+    {
+      "id": "stream",
+      "type": "backend",
+      "label": "stream()",
+      "sublabel": "저장소 · 제너레이터"
+    },
+    {
+      "id": "jsonl",
+      "type": "database",
+      "label": "transactions.jsonl",
+      "sublabel": "7줄"
+    },
+    {
+      "id": "applog",
+      "type": "database",
+      "label": "data/app.log",
+      "sublabel": "실행 기록"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 268,
+      "label": "시작 — 해석 · 조립 · 기록"
+    },
+    {
+      "from": 274,
+      "to": 466,
+      "label": "한 줄씩 흐르기"
+    },
+    {
+      "from": 472,
+      "to": 612,
+      "label": "결과 · 기록 · 종료 코드"
+    }
+  ],
+  "messages": [
+    {
+      "id": "run",
+      "from": "term",
+      "to": "main",
+      "y": 160,
+      "label": "list --limit 3",
+      "variant": "emphasis",
+      "note": "args.limit 은 문자열 \"3\""
+    },
+    {
+      "id": "dispatch",
+      "from": "main",
+      "to": "cmd",
+      "y": 220,
+      "label": "handler(ledger, args)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "log-start",
+      "from": "cmd",
+      "to": "applog",
+      "y": 248,
+      "label": "[list] 시작",
+      "variant": "dashed"
+    },
+    {
+      "id": "call-service",
+      "from": "cmd",
+      "to": "svc",
+      "y": 284,
+      "label": "list_recent(3)",
+      "variant": "emphasis",
+      "note": "parse_count(\"3\") 로 1 이상 정수인지 먼저 검증"
+    },
+    {
+      "id": "pass-generator",
+      "from": "svc",
+      "to": "stream",
+      "y": 340,
+      "label": "newest_first(stream(), 3)",
+      "variant": "emphasis",
+      "note": "제너레이터 객체만 넘긴다 — 아직 파일을 열지도 않음"
+    },
+    {
+      "id": "read-line",
+      "from": "stream",
+      "to": "jsonl",
+      "y": 396,
+      "label": "next() — 한 줄 읽기",
+      "variant": "default"
+    },
+    {
+      "id": "yield",
+      "from": "stream",
+      "to": "svc",
+      "y": 424,
+      "label": "yield Transaction",
+      "variant": "return",
+      "note": "heapq.nlargest 가 받는 대로 최신 3건만 남긴다. 7줄 동안 반복"
+    },
+    {
+      "id": "log-time",
+      "from": "svc",
+      "to": "applog",
+      "y": 482,
+      "label": "실행 시간 0.36ms",
+      "variant": "dashed"
+    },
+    {
+      "id": "result",
+      "from": "svc",
+      "to": "cmd",
+      "y": 510,
+      "label": "list[Transaction] 3건",
+      "variant": "return"
+    },
+    {
+      "id": "print",
+      "from": "cmd",
+      "to": "term",
+      "y": 538,
+      "label": "표 출력 (3건)",
+      "variant": "return"
+    },
+    {
+      "id": "log-ok",
+      "from": "cmd",
+      "to": "applog",
+      "y": 566,
+      "label": "[list] 성공",
+      "variant": "dashed"
+    },
+    {
+      "id": "exit",
+      "from": "main",
+      "to": "term",
+      "y": 594,
+      "label": "종료 코드 0",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "main",
+      "from": 160,
+      "to": 600,
+      "type": "frontend"
+    },
+    {
+      "participant": "cmd",
+      "from": 220,
+      "to": 572,
+      "type": "frontend"
+    },
+    {
+      "participant": "svc",
+      "from": 284,
+      "to": 516,
+      "type": "backend"
+    },
+    {
+      "participant": "stream",
+      "from": 340,
+      "to": 430,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "제너레이터",
+      "items": [
+        "stream() 은 값을 달라고 할 때마다 한 줄만 읽고 멈춘다",
+        "heapq.nlargest(3) 이 지금까지 중 최신 3건만 들고 있어서 메모리는 --limit 에 비례 (10만 건에서 0.05MB)",
+        "최신순 = 날짜가 늦은 것 먼저, 같은 날이면 id 번호가 큰 것 먼저"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "데코레이터",
+      "items": [
+        "main 에서 argparse 해석 → Ledger 조립 → handler 호출. 이 모두가 handle_errors 의 try 안에서 일어난다",
+        "handle_errors 는 main 에 한 번 — 예외를 [오류]/[힌트] 와 종료 코드로",
+        "log_command 는 cmd_* 18개 — 시작 · 성공 · 실패를 app.log 에",
+        "measure_time 은 끝까지 읽는 서비스 메서드 5개 — 제너레이터에 붙이면 0ms 라서"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "값",
+      "items": [
+        "0.36ms 와 7줄은 2026-10-18 에 시연 데이터로 실제 실행한 값"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "B2-1 가계부 — 저장소 하나를 넷이 상속",
+    "locale": "ko",
+    "output": "docs/archify/repositories.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "inheritance": { "label": "상속 (Generic[T])" },
+        "dependency": { "label": "한 줄 → 이 모델로" }
+      }
+    }
+  },
+  "layout": { "mode": "grid" },
+  "types": [
+    {
+      "id": "base_repo", "label": "JsonlRepository[T]", "kind": "class", "sublabel": "JSONL 파일 하나를 다룬다",
+      "row": 0, "col": 1.5,
+      "attributes": [
+        { "name": "model", "type": "type[T]", "visibility": "public" },
+        { "name": "key_field", "type": "str", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "stream", "returns": "Iterator[T]", "visibility": "public" },
+        { "name": "find", "parameters": "key", "returns": "T | None", "visibility": "public" },
+        { "name": "append", "parameters": "items", "returns": "int", "visibility": "public" },
+        { "name": "upsert", "parameters": "item", "returns": "None", "visibility": "public" },
+        { "name": "remove", "parameters": "key", "returns": "bool", "visibility": "public" },
+        { "name": "_rewrite", "parameters": "items", "returns": "None", "visibility": "private" }
+      ]
+    },
+    { "id": "tx_repo", "label": "TransactionRepository", "kind": "class", "sublabel": "key_field = id", "row": 1, "col": 0,
+      "methods": [ { "name": "last_number", "returns": "int", "visibility": "public" } ] },
+    { "id": "cat_repo", "label": "CategoryRepository", "kind": "class", "sublabel": "key_field = name", "row": 1, "col": 1 },
+    { "id": "budget_repo", "label": "BudgetRepository", "kind": "class", "sublabel": "key_field = month", "row": 1, "col": 2 },
+    { "id": "rule_repo", "label": "RecurringRepository", "kind": "class", "sublabel": "key_field = id (보너스)", "row": 1, "col": 3,
+      "methods": [ { "name": "last_number", "returns": "int", "visibility": "public" } ] },
+
+    { "id": "transaction", "label": "Transaction", "kind": "record", "sublabel": "dataclass", "row": 2, "col": 0,
+      "attributes": [
+        { "name": "id", "type": "str" }, { "name": "type", "type": "TransactionType" }, { "name": "date", "type": "str" },
+        { "name": "amount", "type": "int" }, { "name": "category", "type": "str" }, { "name": "memo", "type": "str" }, { "name": "tags", "type": "list[str]" }
+      ],
+      "methods": [ { "name": "__post_init__", "returns": "None" } ] },
+    { "id": "category", "label": "Category", "kind": "record", "sublabel": "dataclass", "row": 2, "col": 1,
+      "attributes": [ { "name": "name", "type": "str" } ],
+      "methods": [ { "name": "__post_init__", "returns": "None" } ] },
+    { "id": "budget", "label": "Budget", "kind": "record", "sublabel": "dataclass", "row": 2, "col": 2,
+      "attributes": [ { "name": "month", "type": "str" }, { "name": "amount", "type": "int" } ],
+      "methods": [ { "name": "__post_init__", "returns": "None" } ] },
+    { "id": "rule", "label": "RecurringRule", "kind": "record", "sublabel": "dataclass", "row": 2, "col": 3,
+      "attributes": [ { "name": "day", "type": "int" }, { "name": "applied_months", "type": "list[str]" } ],
+      "methods": [ { "name": "date_in", "parameters": "month", "returns": "str" } ] }
+  ],
+  "relationships": [
+    { "id": "tx-base", "from": "tx_repo", "to": "base_repo", "kind": "inheritance" },
+    { "id": "cat-base", "from": "cat_repo", "to": "base_repo", "kind": "inheritance" },
+    { "id": "budget-base", "from": "budget_repo", "to": "base_repo", "kind": "inheritance" },
+    { "id": "rule-base", "from": "rule_repo", "to": "base_repo", "kind": "inheritance" },
+    { "id": "tx-model", "from": "tx_repo", "to": "transaction", "kind": "dependency", "label": "model" },
+    { "id": "cat-model", "from": "cat_repo", "to": "category", "kind": "dependency", "label": "model" },
+    { "id": "budget-model", "from": "budget_repo", "to": "budget", "kind": "dependency", "label": "model" },
+    { "id": "rule-model", "from": "rule_repo", "to": "rule", "kind": "dependency", "label": "model" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "자식은 두 가지만 정한다", "items": ["model: 한 줄을 어떤 dataclass 로 바꿀지", "key_field: 한 줄을 구분하는 필드 (id · name · month)", "읽기 · 쓰기 · 원자적 교체는 부모 하나에만 있다"] },
+    { "dot": "emerald", "title": "타입 힌트", "items": ["Generic[T] 라서 TransactionRepository 의 stream 은 Iterator[Transaction] 을 준다", "find 는 T | None — 못 찾았을 때의 처리를 빼먹으면 mypy 가 잡는다"] },
+    { "dot": "amber", "title": "모델은 스스로 검증한다", "items": ["파일에서 읽을 때도 Transaction(**json) 이 __post_init__ 을 거친다", "손으로 고친 잘못된 줄은 그 자리에서 '파일이 손상되었습니다'로 멈춘다"] }
+  ]
+}

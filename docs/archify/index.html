@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B2-1 가계부 구조 그림</title>
+  <meta name="description" content="archify 로 그린 B2-1 가계부의 구조 · 클래스 · 호출 순서 · 흐름 그림 여섯 장">
+  <style>
+    :root {
+      --bg: #f6f7fb; --surface: #ffffff; --line: #e1e4f0; --text: #1e2240; --muted: #5a6086; --accent: #4f46e5;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1020; --surface: #171b33; --line: #2b3056; --text: #eceeff; --muted: #aeb3d8; --accent: #8e8bff; color-scheme: dark; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 "Pretendard Variable", "Apple SD Gothic Neo", system-ui, sans-serif; word-break: keep-all; }
+    main { max-width: 980px; margin: 0 auto; padding: 32px 16px 48px; }
+    h1 { font-size: 26px; margin: 0 0 6px; }
+    .lead { color: var(--muted); margin: 0 0 24px; }
+    ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    a.card { display: block; height: 100%; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; transition: border-color .15s, transform .15s; }
+    a.card:hover, a.card:focus-visible { border-color: var(--accent); transform: translateY(-2px); outline: none; }
+    .kind { font-size: 11px; font-weight: 800; letter-spacing: .05em; color: var(--accent); text-transform: uppercase; }
+    .card b { display: block; font-size: 16px; margin: 2px 0 4px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+    .q { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--accent); }
+    footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>B2-1 가계부 구조 그림</h1>
+    <p class="lead">archify 로 그린 그림 여섯 장이에요. 각 그림은 하나짜리 HTML 이고 노드를 누르거나 확대 · 내보내기를 할 수 있어요. 아래 번호는 동료 평가 문항이에요.</p>
+    <ol>
+      <li><a class="card" href="view.html#architecture"><span class="kind">architecture</span><b>계층 구조</b><p>CLI → 서비스 → 저장소 → 모델, 공통 도구와 저장 파일.</p><span class="q">2-1 모듈 책임</span></a></li>
+      <li><a class="card" href="view.html#classes"><span class="kind">class</span><b>서비스는 저장소를 받는다</b><p>Ledger 가 조립하고, 서비스마다 쓰는 저장소 · 읽기만 하는 저장소.</p><span class="q">2-2 클래스 경계</span></a></li>
+      <li><a class="card" href="view.html#repositories"><span class="kind">class</span><b>저장소 하나를 넷이 상속</b><p>JsonlRepository[T] 와 자식 4개, 각자 다루는 dataclass.</p><span class="q">2-2 · 3-3 Generic[T]</span></a></li>
+      <li><a class="card" href="view.html#list-sequence"><span class="kind">sequence</span><b>list --limit 3 호출 순서</b><p>데코레이터 세 개, 제너레이터가 한 줄씩 넘기는 것, app.log 기록.</p><span class="q">3-1 제너레이터 · 3-2 데코레이터</span></a></li>
+      <li><a class="card" href="view.html#update-workflow"><span class="kind">workflow</span><b>update 와 원자적 교체</b><p>파일을 건드리기 전의 검증과 임시 파일 → os.replace, 실패 갈래.</p><span class="q">2-3 안전한 수정 · 삭제</span></a></li>
+      <li><a class="card" href="view.html#import-dataflow"><span class="kind">dataflow</span><b>import 두 단계</b><p>행마다 검증해 메모리에 모으고 끝난 뒤 한 번에 저장.</p><span class="q">4-3 깨진 행 · 4-1 JSONL/CSV</span></a></li>
+    </ol>
+    <footer>단계별로 재생하는 화면은 <a href="../flow-explorer/index.html">흐름 탐색기</a>, Mermaid 글 버전은 workflows.md 에 있어요.</footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,260 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "B2-1 가계부 — update 와 원자적 교체",
+    "locale": "ko",
+    "output": "docs/archify/update-workflow.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "CLI (cli.py)"
+        },
+        "backend": {
+          "label": "서비스 · 저장소 코드"
+        },
+        "database": {
+          "label": "파일"
+        },
+        "security": {
+          "label": "실패 — 원본은 그대로"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "cli",
+      "label": "CLI · cli.py"
+    },
+    {
+      "id": "svc",
+      "label": "서비스 · services.py"
+    },
+    {
+      "id": "repo",
+      "label": "저장소 · storage.py _rewrite"
+    },
+    {
+      "id": "fail",
+      "label": "실패 → handle_errors → 종료 코드 1",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "check",
+      "label": "검증 — 파일을 건드리기 전",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "swap",
+      "label": "원자적 교체",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "groups": [
+    {
+      "id": "rewrite",
+      "label": "임시 파일에 다 쓴 뒤 한 번에 바꾸기",
+      "lane": "repo",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "cmd",
+    "get",
+    "build",
+    "tmp",
+    "sync",
+    "swap_file",
+    "done"
+  ],
+  "nodes": [
+    {
+      "id": "cmd",
+      "lane": "cli",
+      "col": 0,
+      "type": "frontend",
+      "label": "update --id TX-000004",
+      "sublabel": "준 옵션만 parse_* 로 검증"
+    },
+    {
+      "id": "done",
+      "lane": "cli",
+      "col": 5,
+      "type": "frontend",
+      "label": "[수정 완료]",
+      "sublabel": "바뀐 거래 표 · 종료 0"
+    },
+    {
+      "id": "get",
+      "lane": "svc",
+      "col": 1,
+      "type": "backend",
+      "label": "get(id) → find",
+      "sublabel": "찾는 순간 읽기를 멈춤"
+    },
+    {
+      "id": "build",
+      "lane": "svc",
+      "col": 2,
+      "type": "backend",
+      "label": "새 Transaction",
+      "sublabel": "__post_init__ 재검증"
+    },
+    {
+      "id": "tmp",
+      "lane": "repo",
+      "col": 3,
+      "type": "backend",
+      "label": "tmp 에 한 줄씩 쓰기",
+      "sublabel": "같은 id 줄만 새 값"
+    },
+    {
+      "id": "sync",
+      "lane": "repo",
+      "col": 4,
+      "type": "backend",
+      "label": "flush · fsync",
+      "sublabel": "디스크에 확실히"
+    },
+    {
+      "id": "swap_file",
+      "lane": "repo",
+      "col": 5,
+      "type": "database",
+      "label": "os.replace",
+      "sublabel": "tmp → transactions.jsonl"
+    },
+    {
+      "id": "not_found",
+      "lane": "fail",
+      "col": 1,
+      "type": "security",
+      "label": "NotFoundError",
+      "sublabel": "없는 id"
+    },
+    {
+      "id": "invalid",
+      "lane": "fail",
+      "col": 2,
+      "type": "security",
+      "label": "ValidationError",
+      "sublabel": "틀린 값 · 바뀐 것 없음"
+    },
+    {
+      "id": "write_fail",
+      "lane": "fail",
+      "col": 4,
+      "type": "security",
+      "label": "쓰다가 실패",
+      "sublabel": "finally 가 tmp 삭제"
+    }
+  ],
+  "edges": [
+    {
+      "id": "call-update",
+      "from": "cmd",
+      "to": "get",
+      "label": "update()",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "found",
+      "from": "get",
+      "to": "build",
+      "label": "old",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "upsert",
+      "from": "build",
+      "to": "tmp",
+      "label": "upsert(new)",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "flush",
+      "from": "tmp",
+      "to": "sync",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "replace",
+      "from": "sync",
+      "to": "swap_file",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "report",
+      "from": "swap_file",
+      "to": "done",
+      "label": "새 내용",
+      "variant": "emphasis",
+      "role": "return"
+    },
+    {
+      "id": "missing",
+      "from": "get",
+      "to": "not_found",
+      "label": "None",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "rejected",
+      "from": "build",
+      "to": "invalid",
+      "label": "거부",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "crash",
+      "from": "tmp",
+      "to": "write_fail",
+      "label": "예외",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "왜 임시 파일인가",
+      "items": [
+        "텍스트 파일은 가운데 한 줄만 고칠 수 없어 전체를 다시 쓴다",
+        "원본에 바로 덮어쓰면 쓰다 꺼졌을 때 반쪽 파일이 남는다",
+        "os.replace 는 운영체제가 한 번에 처리해서 '옛 파일' 아니면 '새 파일'만 보인다"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "실패해도 원본은 그대로",
+      "items": [
+        "없는 id · 틀린 값 · 바뀐 것 없음은 파일을 건드리기 전에 끝난다",
+        "쓰기 · fsync · replace 어디서 실패해도 finally 가 tmp 만 지운다",
+        "tests.test_storage.SafeWriteTests 가 바이트 단위로 확인"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "delete 도 같은 길",
+      "items": [
+        "get 으로 먼저 확인 → remove 가 그 줄만 빼고 같은 _rewrite 로 다시 쓴다"
+      ]
+    }
+  ]
+}

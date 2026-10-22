@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "B2-1 가계부 — 계층 구조",
+    "locale": "ko",
+    "output": "docs/archify/architecture.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "external": { "label": "사용자" },
+        "frontend": { "label": "CLI 계층 (cli.py)" },
+        "backend": { "label": "서비스 · 저장소 · 모델 · 공통 도구" },
+        "database": { "label": "저장 파일" }
+      }
+    }
+  },
+  "components": [
+    { "id": "applog", "type": "database", "label": "data/app.log", "sublabel": "실행 기록", "pos": [40, 50], "size": [110, 64] },
+    { "id": "tools", "type": "backend", "label": "공통 도구", "sublabel": "decorators · errors · formatter", "pos": [200, 50], "size": [340, 64] },
+    { "id": "ledger", "type": "backend", "label": "Ledger", "sublabel": "조립만, 규칙 없음", "pos": [635, 50], "size": [140, 64] },
+
+    { "id": "term", "type": "external", "label": "터미널", "sublabel": "python -m budget_app", "pos": [40, 200], "size": [110, 64] },
+    { "id": "main", "type": "frontend", "label": "main()", "sublabel": "종료 코드 0·1·2·130", "pos": [200, 200], "size": [130, 64] },
+    { "id": "cmd", "type": "frontend", "label": "cmd_* 18개", "sublabel": "입력 → 서비스 → 출력", "pos": [400, 200], "size": [140, 64] },
+    { "id": "svc", "type": "backend", "label": "서비스 4개", "sublabel": "services.py 업무 규칙", "pos": [635, 200], "size": [140, 64] },
+    { "id": "repo", "type": "backend", "label": "JsonlRepository", "sublabel": "storage.py 파일 I/O", "pos": [825, 200], "size": [150, 64] },
+    { "id": "jsonl", "type": "database", "label": "data/*.jsonl", "sublabel": "거래·카테고리·예산·반복", "pos": [1035, 200], "size": [150, 64] },
+
+    { "id": "argparse", "type": "frontend", "label": "build_parser", "sublabel": "argparse, 값은 문자열", "pos": [200, 340], "size": [130, 64] },
+    { "id": "models", "type": "backend", "label": "models.py", "sublabel": "parse_* · dataclass", "pos": [635, 340], "size": [140, 64] },
+    { "id": "csv", "type": "database", "label": "CSV 파일", "sublabel": "import · export", "pos": [825, 340], "size": [150, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "CLI 계층 · cli.py", "wraps": ["main", "cmd", "argparse"] },
+    { "kind": "region", "label": "서비스 계층 · services.py", "wraps": ["ledger", "svc"] }
+  ],
+  "connections": [
+    { "id": "argv", "from": "term", "to": "main", "label": "argv", "variant": "emphasis" },
+    { "id": "dispatch", "from": "main", "to": "cmd", "label": "handler", "variant": "emphasis" },
+    { "id": "call-service", "from": "cmd", "to": "svc", "label": "서비스 호출", "variant": "emphasis" },
+    { "id": "use-repo", "from": "svc", "to": "repo", "variant": "emphasis" },
+    { "id": "jsonl-io", "from": "repo", "to": "jsonl", "label": "JSONL", "variant": "emphasis" },
+
+    { "id": "parse-args", "from": "main", "to": "argparse", "label": "parse_args" },
+    { "id": "assemble", "from": "ledger", "to": "svc", "label": "저장소를 나눠 줌" },
+    { "id": "wrap-main", "from": "tools", "to": "main", "label": "@handle_errors", "variant": "dashed" },
+    { "id": "wrap-cmd", "from": "tools", "to": "cmd", "label": "@log_command", "variant": "dashed" },
+    { "id": "write-log", "from": "tools", "to": "applog", "label": "기록", "variant": "dashed" },
+
+    { "id": "cli-validate", "from": "cmd", "to": "models", "label": "parse_*" },
+    { "id": "svc-models", "from": "svc", "to": "models", "label": "값 객체" },
+    { "id": "repo-models", "from": "repo", "to": "models", "label": "한 줄 → 객체" },
+    { "id": "csv-io", "from": "repo", "to": "csv", "label": "CSV 읽기·쓰기" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "의존은 위 → 아래로만", "items": ["CLI → 서비스 → 저장소 → 모델", "cli.py 는 storage 를 import 하지 않고 Ledger 의 서비스만 부른다", "input 은 cli 에만, 파일 열기는 storage 에만 (구조 테스트가 소스를 세어 확인)"] },
+    { "dot": "emerald", "title": "바뀌면 고치는 곳", "items": ["화면 · 옵션 → cli.py", "업무 규칙 → services.py", "저장 형식 (JSONL → SQLite) → storage.py", "항목 · 검증 규칙 → models.py"] },
+    { "dot": "violet", "title": "서비스는 서로 부르지 않는다", "items": ["필요한 저장소를 직접 받고, 어떤 서비스가 어떤 파일을 쓰는지는 Ledger 한 곳에서 정한다"] }
+  ]
+}

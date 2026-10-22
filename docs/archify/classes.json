@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "B2-1 가계부 — 서비스는 저장소를 받는다",
+    "locale": "ko",
+    "output": "docs/archify/classes.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "composition": { "label": "Ledger 가 만들어 가짐" },
+        "association": { "label": "쓰는 저장소" },
+        "dependency": { "label": "읽기만 하는 저장소" }
+      }
+    }
+  },
+  "layout": { "mode": "grid" },
+  "types": [
+    {
+      "id": "ledger", "label": "Ledger", "kind": "class", "sublabel": "조립만 한다 (규칙 없음)",
+      "row": 0, "col": 0,
+      "attributes": [
+        { "name": "transactions", "type": "TransactionService", "visibility": "public" },
+        { "name": "categories", "type": "CategoryService", "visibility": "public" },
+        { "name": "budgets", "type": "BudgetService", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "initialize", "returns": "list[Path]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "tx_service", "label": "TransactionService", "kind": "class", "sublabel": "서비스 · 등록된 카테고리만, 최신순",
+      "row": 0, "col": 1,
+      "methods": [
+        { "name": "add", "parameters": "…", "returns": "Transaction", "visibility": "public" },
+        { "name": "list_recent", "parameters": "limit: int", "returns": "list[Transaction]", "visibility": "public" },
+        { "name": "update", "parameters": "tx_id, …", "returns": "Transaction", "visibility": "public" },
+        { "name": "import_csv", "parameters": "path", "returns": "ImportResult", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "tx_repo", "label": "TransactionRepository", "kind": "class", "sublabel": "저장소 · transactions.jsonl",
+      "row": 0, "col": 2,
+      "methods": [ { "name": "last_number", "returns": "int", "visibility": "public" } ]
+    },
+    {
+      "id": "budget_service", "label": "BudgetService", "kind": "class", "sublabel": "서비스 · 예산, 월별 요약",
+      "row": 0, "col": 3,
+      "methods": [
+        { "name": "set_budget", "parameters": "month, amount", "returns": "Budget", "visibility": "public" },
+        { "name": "summarize", "parameters": "month, top", "returns": "MonthlySummary", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "cat_repo", "label": "CategoryRepository", "kind": "class", "sublabel": "저장소 · categories.jsonl",
+      "row": 1, "col": 1
+    },
+    {
+      "id": "cat_service", "label": "CategoryService", "kind": "class", "sublabel": "서비스 · 사용 중이면 삭제 금지",
+      "row": 1, "col": 2,
+      "methods": [
+        { "name": "add", "parameters": "name: str", "returns": "Category", "visibility": "public" },
+        { "name": "remove", "parameters": "name: str", "returns": "Category", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "budget_repo", "label": "BudgetRepository", "kind": "class", "sublabel": "저장소 · budgets.jsonl",
+      "row": 1, "col": 3
+    }
+  ],
+  "relationships": [
+    { "id": "ledger-tx", "from": "ledger", "to": "tx_service", "kind": "composition" },
+    { "id": "ledger-cat", "from": "ledger", "to": "cat_service", "kind": "composition", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "ledger-budget", "from": "ledger", "to": "budget_service", "kind": "composition", "fromSide": "top", "toSide": "top" },
+
+    { "id": "tx-writes", "from": "tx_service", "to": "tx_repo", "kind": "association", "label": "씀" },
+    { "id": "tx-reads-cat", "from": "tx_service", "to": "cat_repo", "kind": "dependency", "label": "등록됐나" },
+    { "id": "cat-writes", "from": "cat_service", "to": "cat_repo", "kind": "association", "label": "씀" },
+    { "id": "cat-reads-tx", "from": "cat_service", "to": "tx_repo", "kind": "dependency", "label": "쓰는 거래 세기" },
+    { "id": "budget-reads-tx", "from": "budget_service", "to": "tx_repo", "kind": "dependency", "label": "요약 계산" },
+    { "id": "budget-writes", "from": "budget_service", "to": "budget_repo", "kind": "association", "label": "씀" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "서비스끼리는 서로 부르지 않는다", "items": ["거래 서비스는 '등록된 카테고리인가', 카테고리 서비스는 '이 카테고리를 쓰는 거래가 있나'를 알아야 한다", "서로 부르면 맞물려서, 필요한 저장소를 직접 받는다 (점선 = 읽기만)", "누가 어떤 저장소를 받는지는 Ledger.__init__ 한 곳에서 정한다"] },
+    { "dot": "slate", "title": "그림에서 뺀 것", "items": ["보너스 RecurringService · RecurringRepository 는 같은 모양이라 생략", "메서드는 설명에 필요한 것만 골랐다"] }
+  ]
+}
