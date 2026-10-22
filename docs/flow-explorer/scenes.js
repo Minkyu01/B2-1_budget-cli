@@ -820,7 +820,7 @@
         "find 처럼 찾는 순간 멈출 수 있어요. 뒤쪽 줄이 깨져 있어도 앞에서 찾으면 오류가 안 나요(test_stream_reads_lazily).",
         "measure_time 을 stream 에 직접 붙이면 0ms 에 가까워요 — 제너레이터 객체만 만들고 끝나서요. 그래서 끝까지 소비하는 서비스 메서드에 붙였어요.",
       ],
-      demo: "README '공부할 것 1' 의 python3 -c (제너레이터 객체 → next 두 번) · python3 tests/benchmark.py --records 100000",
+      demo: "peer-review.md 3-1 시연 1 의 python3 -c (제너레이터 객체 → next 두 번) · python3 tests/benchmark.py --records 100000",
       scenarios: [
         { id: "list", label: "list --limit 3 (heapq)", tone: "ok", mode: "heap", limit: 3, cmd: "python -m budget_app list --limit 3", out: OUT_LIST3,
           intro: "heapq.nlargest(3) 이 받는 대로 최신 3건만 들고 있어요. 7줄을 다 읽어도 메모리에는 늘 3건 이하예요.",

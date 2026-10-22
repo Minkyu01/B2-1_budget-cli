@@ -415,7 +415,7 @@ flowchart LR
 - 손상된 줄이 있으면 그 줄에 닿는 순간 `[오류] transactions.jsonl 파일이 손상되었습니다 (7번째 줄).` 로 멈춥니다. 건너뛰면 합계가 조용히 틀리고, 다시 쓸 때 그 줄이 사라지기 때문입니다.
 
 **코드** [stream](../budget_app/storage.py#L54) · [find](../budget_app/storage.py#L76) · [newest_first](../budget_app/services.py#L72) · [measure_time](../budget_app/decorators.py#L110) · [_damaged](../budget_app/storage.py#L158)
-**시연** README "공부할 것 1" 의 `python3 -c` (제너레이터 객체 → `next` 두 번) · `python3 tests/benchmark.py --records 100000` (약 25초)
+**시연** [peer-review.md](peer-review.md) 3-1 의 시연 1 `python3 -c` (제너레이터 객체 → `next` 두 번) · `python3 tests/benchmark.py --records 100000` (약 25초)
 
 ---
 
