@@ -1,0 +1,22 @@
+# 과제 원문 — 공개 저장소에 올리지 않는다
+project.md
+
+# 실행하면 생기는 것 (가계부 데이터, 실행 기록, 백업)
+data/
+*.tmp
+
+# 시연하면서 만든 CSV
+/out.csv
+/export.csv
+
+# 파이썬 캐시, 타입 검사기(mypy) 캐시
+__pycache__/
+*.py[cod]
+.mypy_cache/
+
+# 공개 저장소에 올리지 않는 것 (2026-10-22)
+# - 서버 IP · 계정이 든 배포 스크립트와 서버 메모
+docs/flow-explorer/tools/deploy.sh
+docs/flow-explorer/DEPLOY.local.md
+# - archify 검사 기록 (이 맥의 절대 경로가 들어 있음)
+docs/archify/checks/
